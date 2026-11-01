@@ -10,6 +10,7 @@ from infra.db_seed import UserTestPersona, seed_database
 from infra.security import decrypt_value
 from infra.apm_tracer import APMPerformanceTracer
 from playwright.sync_api import Browser, Page
+from infra.data_mutator import TestDataMutator
 
 # 1. Initialize a production-grade centralized logging subsystem (xdist-safe)
 @pytest.fixture(scope="session", autouse=True)
@@ -264,3 +265,8 @@ def authenticated_page(browser: Browser) -> Page:
     page = context.new_page()
     yield page
     context.close()
+
+@pytest.fixture(scope="function")
+def mutated_data():
+    """Provides a fresh, randomized data packet mutation string mapping for structural input tests."""
+    return TestDataMutator.generate_user_profile()

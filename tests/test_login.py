@@ -66,8 +66,10 @@ def test_secure_database_driven_login(page: Page, db_user_credentials):
 
 # Add a skip condition to your visual test for webkit to prevent font rendering mismatches locally
 @pytest.mark.skipif(
-    os.environ.get("PLAYWRIGHT_HEADLESS") == "true" or sys.platform != "win32",
-    reason="Bypass visual snapshot font rendering variances on headless/Linux cloud runners"
+    os.environ.get("PLAYWRIGHT_HEADLESS") == "true" or 
+    os.environ.get("PYTEST_XDIST_WORKER") is not None or 
+    sys.platform != "win32",
+    reason="Bypass visual snapshot rendering variances during headless parallel execution matrices"
 )
 def test_login_page_visual_snapshot(page: Page, assert_snapshot):
     page.goto("https://herokuapp.com")

@@ -7,6 +7,7 @@ from datetime import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from infra.db_seed import UserTestPersona, seed_database
+from infra.security import decrypt_value
 
 # 1. Initialize a production-grade centralized logging subsystem (xdist-safe)
 @pytest.fixture(scope="session", autouse=True)
@@ -182,14 +183,12 @@ def pytest_sessionfinish(session, exitstatus):
 
 @pytest.fixture(scope="session", autouse=True)
 def init_db(tmp_path_factory, worker_id):
-    """Ensures a single database initialization block across concurrent workers."""
+    """Ensures a single database initialization block across concurrent workers and cleans up artifacts on teardown."""
+    db_file_path = "test_data.db"
+    
     if worker_id == "master":
-        # Standard sequential runner execution path
         seed_database()
     else:
-        # Multi-worker parallel routing lane path
-        # Use a shared directory lock file to let the first worker seed the DB,
-        # while forcing secondary workers to wait cleanly.
         root_tmp_dir = tmp_path_factory.getbasetemp().parent
         lock_file = root_tmp_dir / "db_seeding_sequence.lock"
         
@@ -198,20 +197,30 @@ def init_db(tmp_path_factory, worker_id):
                 lock_file.write_text("locked")
                 seed_database()
             except Exception:
-                # Fallback if another parallel thread initialized it concurrently
                 pass
+
+    # 1. This tells Pytest to pause here and hand control over to execute all your tests
+    yield 
+
+    # 2. TEARDOWN ENGINE: This runs immediately after the entire test suite completes!
+    # Only the primary master process or the final worker should delete the shared file to prevent race conditions.
+    if worker_id in ["master", "gw0"]:
+        if os.path.exists(db_file_path):
+            try:
+                os.remove(db_file_path)
+                print(f"\n[Teardown Context] Relational database '{db_file_path}' successfully purged.")
+            except Exception as e:
+                print(f"\n[Teardown Context] Safeguard triggered: Could not delete database file. Reason: {e}")
 
 @pytest.fixture(scope="function")
 def db_user_credentials(request):
-    """Function fixture that queries active environment user records directly via SQLAlchemy ORM."""
+    """Function fixture that queries active environment user records and decrypts tokens on-the-fly."""
     target_env = request.config.getoption("--env")
     
-    # Establish local transactional connection
     engine = create_engine("sqlite:///test_data.db")
     Session = sessionmaker(bind=engine)
     session = Session()
     
-    # Filter database entries dynamically based on runtime CLI flags
     user_record = session.query(UserTestPersona).filter(
         UserTestPersona.env == target_env,
         UserTestPersona.is_active == True
@@ -223,8 +232,7 @@ def db_user_credentials(request):
         
     yield {
         "username": user_record.username,
-        "password": user_record.password
+        "password": decrypt_value(user_record.password)  # Decrypting password inside volatile memory right before extraction
     }
     
-    # Explicitly close transactional handle after test completion teardown
     session.close()

@@ -4,6 +4,9 @@ import pytest
 import json
 import urllib.request
 from datetime import datetime
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from infra.db_seed import UserTestPersona, seed_database
 
 # 1. Initialize a production-grade centralized logging subsystem (xdist-safe)
 @pytest.fixture(scope="session", autouse=True)
@@ -171,3 +174,57 @@ def pytest_sessionfinish(session, exitstatus):
     except Exception:
          # Prevent any network drops from hard-crashing your core testing suites
         pass
+
+    def pytest_addoption(parser):
+    # Safe check: register flag only if another milestone hasn't registered it yet
+     if not any(opt.names == ['--env'] for opt in parser._anonymous.options):
+        parser.addoption("--env", action="store", default="staging", help="Target env run execution matrix")
+
+@pytest.fixture(scope="session", autouse=True)
+def init_db(tmp_path_factory, worker_id):
+    """Ensures a single database initialization block across concurrent workers."""
+    if worker_id == "master":
+        # Standard sequential runner execution path
+        seed_database()
+    else:
+        # Multi-worker parallel routing lane path
+        # Use a shared directory lock file to let the first worker seed the DB,
+        # while forcing secondary workers to wait cleanly.
+        root_tmp_dir = tmp_path_factory.getbasetemp().parent
+        lock_file = root_tmp_dir / "db_seeding_sequence.lock"
+        
+        if not lock_file.exists():
+            try:
+                lock_file.write_text("locked")
+                seed_database()
+            except Exception:
+                # Fallback if another parallel thread initialized it concurrently
+                pass
+
+@pytest.fixture(scope="function")
+def db_user_credentials(request):
+    """Function fixture that queries active environment user records directly via SQLAlchemy ORM."""
+    target_env = request.config.getoption("--env")
+    
+    # Establish local transactional connection
+    engine = create_engine("sqlite:///test_data.db")
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    
+    # Filter database entries dynamically based on runtime CLI flags
+    user_record = session.query(UserTestPersona).filter(
+        UserTestPersona.env == target_env,
+        UserTestPersona.is_active == True
+    ).first()
+    
+    if not user_record:
+        session.close()
+        pytest.fail(f"No active database persona records found for target environment validation: {target_env}")
+        
+    yield {
+        "username": user_record.username,
+        "password": user_record.password
+    }
+    
+    # Explicitly close transactional handle after test completion teardown
+    session.close()

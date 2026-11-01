@@ -1,0 +1,11 @@
+# .dockerignore
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+.snapshots/
+logs/
+report.html
+*.pdf
+.git/
+.github/

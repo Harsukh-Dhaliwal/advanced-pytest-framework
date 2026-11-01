@@ -82,5 +82,12 @@
         "status_code": 200,
         "duration_ms": 166.55,
         "performance_rating": "OPTIMAL"
+    },
+    {
+        "timestamp": 1793577109.5208333,
+        "transaction_name": "POST /post endpoint validation matrix",
+        "status_code": 200,
+        "duration_ms": 138.63,
+        "performance_rating": "OPTIMAL"
     }
 ]

@@ -1,17 +1,42 @@
-[
+{
+  "login_scenarios": [
     {
-        "scenario": "Valid Standard User Login",
-        "username": "standard_user",
-        "expected_url_keyword": "inventory"
+      "scenario": "Valid Standard User Login",
+      "username": "standard_user",
+      "expected_url_keyword": "inventory"
     },
     {
-        "scenario": "Invalid Account Login",
-        "username": "locked_out_user",
-        "expected_url_keyword": "saucedemo.com"
+      "scenario": "Invalid Account Login",
+      "username": "locked_out_user",
+      "expected_url_keyword": "saucedemo.com"
     },
     {
-        "scenario": "Problem User Account Verification",
-        "username": "problem_user",
-        "expected_url_keyword": "inventory"
+      "scenario": "Problem User Account Verification",
+      "username": "problem_user",
+      "expected_url_keyword": "inventory"
     }
-]
+  ],
+  "cookies": [
+    {
+      "name": "enterprise_session_token",
+      "value": "secure_mock_token_xyz_12345",
+      "domain": "the-internet.herokuapp.com",
+      "path": "/",
+      "expires": 1822432000,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "https://herokuapp.com",
+      "localStorage": [
+        {
+          "name": "user_permissions",
+          "value": "{\"roles\":[\"automation_admin\"],\"scope\":\"global\"}"
+        }
+      ]
+    }
+  ]
+}

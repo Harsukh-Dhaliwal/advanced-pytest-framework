@@ -9,6 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from infra.db_seed import UserTestPersona, seed_database
 from infra.security import decrypt_value
 from infra.apm_tracer import APMPerformanceTracer
+from playwright.sync_api import Browser, Page
 
 # 1. Initialize a production-grade centralized logging subsystem (xdist-safe)
 @pytest.fixture(scope="session", autouse=True)
@@ -245,3 +246,21 @@ def apm_tracer():
     yield tracer
     # Save accumulated telemetry logs on test suite exit teardown
     tracer.flush_trace_metrics()
+
+@pytest.fixture(scope="function")
+def authenticated_page(browser: Browser) -> Page:
+    """Provisions an isolated browser context by locating test_data.json dynamically."""
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    tests_path = os.path.join(current_dir, "tests", "test_data.json")
+    root_path = os.path.join(current_dir, "test_data.json")
+    
+    if os.path.exists(root_path):
+        state_path = root_path
+    else:
+        state_path = tests_path  # Falls back to tests/ folder location
+        
+    context = browser.new_context(storage_state=state_path)
+    page = context.new_page()
+    yield page
+    context.close()

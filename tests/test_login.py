@@ -74,3 +74,9 @@ def test_secure_database_driven_login(page: Page, db_user_credentials):
 def test_login_page_visual_snapshot(page: Page, assert_snapshot):
     page.goto("https://herokuapp.com")
     assert_snapshot(page.screenshot(), "login_page.png")
+
+def load_scenarios():
+    with open("test_data.json", "r") as file:
+        data = json.load(file)
+        # Point to the updated key array layout mapping
+        return data.get("login_scenarios", [])

@@ -1,10 +1,9 @@
+import time
 import json
 import os
 import logging
 import pytest
-from playwright.sync_api import APIRequestContext
 
-# Connect into our centralized logging architecture channel
 logger = logging.getLogger("AutomationSuite")
 
 def load_expected_schema():
@@ -12,44 +11,40 @@ def load_expected_schema():
     with open(file_path, "r") as file:
         return json.load(file)
 
-def test_backend_api_endpoint_validation(playwright):
-    """
-    Directly targets back-end application layers to assert API response codes,
-    header integrity, and structural payload data compliance.
-    """
+def test_backend_api_endpoint_validation(playwright, apm_tracer):
+    """Directly targets back-end application layers to assert API compliance and log APM telemetry."""
     logger.info("Initializing background API Request Context...")
-    
-    # 1. Establish an isolated background HTTP requester
     api_context = playwright.request.new_context(base_url="https://httpbin.org")
     
     logger.info("Sending outbound POST request to validation endpoint...")
     expected_data = load_expected_schema()
     
-    # 2. Dispatch a payload to a real, open test server endpoint
+    # --- Start Timer ---
+    start_time = time.time()
     response = api_context.post("/post", data=expected_data)
+    duration_ms = (time.time() - start_time) * 1000
+    # --------------------
+
+    # Track metrics inside our APM infrastructure module
+    apm_tracer.log_transaction(
+        transaction_name="POST /post endpoint validation matrix",
+        status_code=response.status,
+        duration_ms=duration_ms
+    )
     
-    # 3. Assert the HTTP response status code is a perfect 200 OK
     logger.info(f"API Response intercepted. Status Code: {response.status}")
-    # Update your assertion to accept either success (200) or rate-limiting (429)
     assert response.status in [200, 429]
 
-    # Wrap the body parsing steps with an if-statement condition
     if response.status == 200:
         response_body = response.json()
         returned_payload = response_body["json"]
-    # ... leave your existing schema validations here ...
+        
+        logger.info("Verifying payload data schema values and key types...")
+        assert returned_payload["account_status"] == "active"
+        assert isinstance(returned_payload["user_id"], int)
+        assert "auth_token" in returned_payload
+        logger.info("API Schema compliance check successfully passed.")
     else:
-        print("Skipping payload schema checks because public endpoints are rate-limiting our parallel run.")
+        logger.warning("Skipping payload schema checks because public endpoints are rate-limiting our parallel run (HTTP 429).")
     
-    # 4. Parse the return JSON data packet
-    response_body = response.json()
-    returned_payload = response_body["json"]
-    
-    # 5. Execute core data structure validation assertions
-    logger.info("Verifying payload data schema values and key types...")
-    assert returned_payload["account_status"] == "active"
-    assert isinstance(returned_payload["user_id"], int)
-    assert "auth_token" in returned_payload
-    
-    logger.info("API Schema compliance check successfully passed.")
     api_context.dispose()

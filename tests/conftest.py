@@ -8,6 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from infra.db_seed import UserTestPersona, seed_database
 from infra.security import decrypt_value
+from infra.apm_tracer import APMPerformanceTracer
 
 # 1. Initialize a production-grade centralized logging subsystem (xdist-safe)
 @pytest.fixture(scope="session", autouse=True)
@@ -236,3 +237,11 @@ def db_user_credentials(request):
     }
     
     session.close()
+
+@pytest.fixture(scope="session")
+def apm_tracer():
+    """Provides a centralized telemetry handle to trace framework performance matrices."""
+    tracer = APMPerformanceTracer()
+    yield tracer
+    # Save accumulated telemetry logs on test suite exit teardown
+    tracer.flush_trace_metrics()

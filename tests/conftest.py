@@ -270,3 +270,11 @@ def authenticated_page(browser: Browser) -> Page:
 def mutated_data():
     """Provides a fresh, randomized data packet mutation string mapping for structural input tests."""
     return TestDataMutator.generate_user_profile()
+
+@pytest.fixture(scope="session")
+def streaming_network_service():
+    """
+    Provides a standardized mock URI route matching enterprise data schemas.
+    Safe for parallel execution across all distributed xdist worker nodes.
+    """
+    return "https://internal-reactive-stream.local"

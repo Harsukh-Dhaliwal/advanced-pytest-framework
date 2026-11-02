@@ -4,3 +4,5 @@ tests/make_resume.py
 locustfile.py
 requirements.txt
 Harsukh_Dhaliwal_ATS_Optimized_Resume.pdf
+# Session Cache Artifacts
+.session_cache/

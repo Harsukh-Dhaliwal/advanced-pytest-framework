@@ -1,0 +1,10 @@
+{
+    "test_chaos_injection_suite": {
+        "dependencies_mapped": [
+            "chaos_mutator.py",
+            "security.py",
+            "apm_tracer.py"
+        ],
+        "layer_classification": "E2E_Network_Interception_Grid"
+    }
+}

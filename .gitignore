@@ -7,3 +7,8 @@ Harsukh_Dhaliwal_ATS_Optimized_Resume.pdf
 # Session Cache Artifacts
 .session_cache/
 Harsukh_D_QA_Resume.pdf
+allure-results/
+allure-report/
+logs/network_logs/
+watch_tests.py
+watch_tests.py

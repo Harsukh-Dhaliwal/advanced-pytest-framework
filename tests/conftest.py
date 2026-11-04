@@ -3,13 +3,14 @@ import logging
 import pytest
 import json
 import urllib.request
+import allure
 from datetime import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from infra.db_seed import UserTestPersona, seed_database
 from infra.security import decrypt_value
 from infra.apm_tracer import APMPerformanceTracer
-from playwright.sync_api import Browser, Page
+from playwright.sync_api import Browser, Page, sync_playwright
 from infra.data_mutator import TestDataMutator
 
 # 1. Initialize a production-grade centralized logging subsystem (xdist-safe)
@@ -278,3 +279,61 @@ def streaming_network_service():
     Safe for parallel execution across all distributed xdist worker nodes.
     """
     return "https://internal-reactive-stream.local"
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """
+    Monitors execution states. Captures visual snapshots on failure
+    while leaving network file compilation to the native plugin teardown.
+    """
+    outcome = yield
+    report = outcome.get_result()
+    
+    if report.when == "call" and report.failed:
+        if "page" in item.funcargs:
+            page = item.funcargs["page"]
+            try:
+                # Capture visual DOM crash footprint
+                screenshot_bytes = page.screenshot(full_page=True, type="png")
+                allure.attach(
+                    screenshot_bytes,
+                    name=f"CRASH_SNAPSHOT_{item.name}",
+                    attachment_type=allure.attachment_type.PNG
+                )
+            except Exception as e:
+                print(f"[Allure Hook Error] Visual capture bypassed: {e}")
+
+def pytest_sessionfinish(session, exitstatus):
+    """
+    Executes instantly as the testing grid shuts down.
+    Compiles runtime variables straight into the Allure reporting folder.
+    """
+    allure_dir = session.config.getoption("--alluredir")
+    if allure_dir and os.path.exists(allure_dir):
+        env_file_path = os.path.join(allure_dir, "environment.properties")
+        
+        # Build out clean key-value environment variables for the dashboard UI
+        with open(env_file_path, "w") as f:
+            f.write("Target_Environment=Staging-V2\n")
+            f.write(f"Automation_Engine=Playwright_Sync\n")
+            f.write(f"Python_Version={os.sys.version.split()[0]}\n")
+            f.write(f"Executor=GitHub_Headless_Runner\n")
+
+@pytest.fixture(scope="function")
+def browser_context_args(browser_context_args, request):
+    """
+    Native hook that injects network recording options straight into 
+    the plugin's browser engine without causing asyncio loop collisions.
+    """
+    # 1. Ensure our log directory structure exists cleanly
+    os.makedirs("logs/network_traces", exist_ok=True)
+    
+    # 2. Generate a clean, unique name per test case (removes bracket formatting)
+    clean_test_name = request.node.name.replace("[", "_").replace("]", "_")
+    
+    # 3. Feed the tracking parameters safely into the core execution engine
+    return {
+        **browser_context_args,
+        "record_har_path": f"logs/network_traces/{clean_test_name}.har",
+        "record_har_omit_content": False  # Crucial: Records true JSON api bodies
+    }

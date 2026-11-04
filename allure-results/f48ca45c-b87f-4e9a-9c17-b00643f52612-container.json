@@ -1,0 +1,1 @@
+{"uuid": "515a11c1-f4b9-4efb-a880-c0122bb06d31", "befores": [{"name": "scenario_data", "status": "passed", "start": 1793749430718, "stop": 1793749430718}], "afters": [{"name": "scenario_data::<lambda>", "start": 1793749430719}], "start": 1793749430718, "stop": 1793749430719}

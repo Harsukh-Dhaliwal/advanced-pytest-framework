@@ -98,26 +98,70 @@ class AlfredCore:
         return total_freed_bytes, purged_paths
     
 if __name__ == "__main__":
+    import sys
+    
+    # 1. Boot up Alfred's interactive core
     alfred = AlfredCore()
     print("\n" + "="*60)
-    print(f"🤖 Core Engine Online: Welcome back, I am {alfred.identity} (v{alfred.version}).")
+    print(f"🤖 [System Boot Complete]: Hello! I am {alfred.identity} (v{alfred.version}).")
+    print("🧠 My cognitive modules are online and calibrated.")
     print("="*60)
     
-    print("\n🧠 Auditing logical reasoning module capabilities...")
-    alfred.initialize_logic_module(module_name="binary_logic_gate", input_size=2)
-    and_gate_data = [
-        ([0, 0], 0), 
-        ([1, 0], 0), 
-        ([0, 1], 0), 
-        ([1, 1], 1)
-    ]
-    alfred.train_module(module_name="binary_logic_gate", training_data=and_gate_data, epochs=50)
-    print(f"✅ Neural verification check: PASSED")
+    # Pre-train Alfred's logic module so he's smart out of the box
+    alfred.initialize_logic_module(module_name="terminal_logic", input_size=2)
+    and_gate_data = [([0, 0], 0), ([1, 0], 0), ([0, 1], 0), ([1, 1], 1)]
+    alfred.train_module(module_name="terminal_logic", training_data=and_gate_data, epochs=50)
 
-    print("\n📂 Running automated local project diagnostics...")
-    # Hardcoded dry_run=True to ensure it only reads file metadata sizes
-    bytes_found, targets = alfred.calculate_and_purge_workspace_bloat(target_dir=".", dry_run=True)
-    
-    print(f"📊 Workspace Report: Detected {len(targets)} transient framework log/cache directories.")
-    print(f"💾 Accumulated log size footprint: {bytes_found / 1024:.2f} KB")
-    print("="*60 + "\n")
+    # 2. Main Conversation Loop
+    while True:
+        print("\n💬 What would you like me to do, sir? Type a command:")
+        print("👉 [1] 'diagnose' : Scan project directory for file cache footprints")
+        print("👉 [2] 'analyze'  : Parse text or a job posting for technical keywords")
+        print("👉 [3] 'exit'     : Power down my cognitive shell session")
+        
+        try:
+            # Capture user terminal input dynamically
+            user_input = input("\n👤 You: ").strip().lower()
+            
+            if user_input in ["3", "exit", "quit", "power down"]:
+                print(f"\n🤖 {alfred.identity}: Powering down safely. Have a wonderful evening, sir.")
+                print("="*60 + "\n")
+                sys.exit(0)
+                
+            elif user_input in ["1", "diagnose", "scan"]:
+                print(f"\n🤖 {alfred.identity}: Initializing workspace file system sweep...")
+                bytes_found, targets = alfred.calculate_and_purge_workspace_bloat(target_dir=".", dry_run=True)
+                print(f"📊 Framework Report: Located {len(targets)} active log/cache trees.")
+                print(f"💾 Accumulated storage space footprint: {bytes_found / 1024:.2f} KB")
+                
+            elif user_input in ["2", "analyze", "parse"]:
+                print(f"\n🤖 {alfred.identity}: Understood. Please paste the raw text or job description below.")
+                print("📝 (Press Enter twice when you are finished pasting your text):")
+                
+                # Multi-line input parsing loop
+                lines = []
+                while True:
+                    line = input()
+                    if line == "":
+                        break
+                    lines.append(line)
+                raw_pasted_text = "\n".join(lines)
+                
+                if not raw_pasted_text.strip():
+                    print(f"⚠️ {alfred.identity}: The text stream was empty. Aborting parsing loop.")
+                    continue
+                    
+                print(f"\n🤖 {alfred.identity}: Normalizing text vectors and parsing density metrics...")
+                keywords = alfred.analyze_text_keywords(raw_pasted_text, top_n=5)
+                
+                print("\n📊 Top 5 High-Density Technical Keywords Extracted:")
+                for rank, (word, count) in enumerate(keywords, start=1):
+                    print(f"   [{rank}] {word} -> Mentioned {count} time(s)")
+                    
+            else:
+                print(f"\n🤖 {alfred.identity}: I apologize, sir. I recognize the input, but I do not possess a skill mapping for '{user_input}' yet.")
+                print("💡 Let's try selecting an operational choice from the menu above.")
+                
+        except (KeyboardInterrupt, EOFError):
+            print(f"\n\n🤖 {alfred.identity}: Session interrupted. Powering down shell modules safely.")
+            break

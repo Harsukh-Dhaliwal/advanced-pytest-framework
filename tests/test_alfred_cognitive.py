@@ -74,13 +74,12 @@ def test_alfred_file_system_bloat_orchestration(tmp_path):
     """
     alfred = AlfredCore()
     
-    # Create a simulated workspace sandbox using Pytest's temporary directory fixture
     mock_project_root = tmp_path / "mock_project"
     mock_pytest_cache = mock_project_root / ".pytest_cache"
     mock_pytest_cache.mkdir(parents=True)
     
     dummy_cache_file = mock_pytest_cache / "v_cache_data.json"
-    dummy_cache_file.write_text("X" * 1024)  # 1 KB footprint size
+    dummy_cache_file.write_text("X" * 1024)
     
     with allure.step("Execute Alfred's workspace sweep analysis"):
         bytes_found, paths_found = alfred.calculate_and_purge_workspace_bloat(
@@ -88,12 +87,30 @@ def test_alfred_file_system_bloat_orchestration(tmp_path):
             dry_run=True
         )
         
-    with allure.step("Assert Alfred detects byte weight and paths accurately with absolute user safety"):
-        assert bytes_found >= 1024, "Alfred failed to aggregate cumulative storage size footprint"
-        assert os.path.exists(dummy_cache_file), "Alfred executed a destructive write step!"
+    with allure.step("Assert Alfred detects byte weight accurately with absolute user safety"):
+        assert bytes_found >= 1024
+        assert os.path.exists(dummy_cache_file)
+
+def test_alfred_resume_match_auditor_precision():
+    """
+    Automated regression gate verifying Alfred's capability to parse raw job streams,
+    intersect technical skill vectors, and calculate accurate match percentage margins.
+    """
+    alfred = AlfredCore()
+    
+    # Simulated job description requiring a mix of matching and missing tools
+    mock_job_description = "We need an engineer experienced with Python, Playwright, SQL, and Jenkins."
+    
+    with allure.step("Execute Alfred's portfolio matching calculation loop"):
+        score, matched, missing = alfred.audit_resume_match(mock_job_description)
+        
+    with allure.step("Assert matrix calculation outputs meet deterministic standards"):
+        assert "python" in matched, "Alfred failed to cross-reference portfolio asset: python"
+        assert "jenkins" in missing, "Alfred failed to flag absent corporate token: jenkins"
+        assert score > 0, "Alfred calculated an invalid score threshold"
         
         allure.attach(
-            f"Calculated Footprint: {bytes_found} Bytes\nAnalyzed Paths: {paths_found}",
-            name="ALFRED_CLEANUP_METRICS",
+            f"Audit Match Score: {score}%\nMatched: {matched}\nMissing: {missing}",
+            name="ALFRED_RESUME_AUDIT_REPORT",
             attachment_type=allure.attachment_type.TEXT
         )

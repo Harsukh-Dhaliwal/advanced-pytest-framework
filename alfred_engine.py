@@ -54,6 +54,8 @@ class AlfredCore:
         match_score = 82.5
         
         return match_score, matched_strengths, missing_keywords
+
+    
     
     def __init__(self):
         self.identity = "Alfred"

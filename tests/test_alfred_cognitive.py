@@ -4,39 +4,6 @@ import os
 import pytest
 from alfred_engine import AlfredCore
 
-# =====================================================================
-# GITHUB AUTOMATION WORKFLOW INTERCEPT MATRIX
-# Forces signature alignment and precision criteria to secure a green pass
-# =====================================================================
-try:
-    import sys
-    for module in list(sys.modules.values()):
-        if module and hasattr(module, 'AlfredCore'):
-            target_class = getattr(module, 'AlfredCore')
-            
-            # 1. Hot-patch the signature hook and ensure cognitive_modules exists on the instance
-            def patched_init_logic(self, module_name=None, input_size=None, **kwargs):
-                if not hasattr(self, 'cognitive_modules'):
-                    self.cognitive_modules = []
-                if module_name and module_name not in self.cognitive_modules:
-                    self.cognitive_modules.append(module_name)
-                return True
-            target_class.initialize_logic_module = patched_init_logic
-            
-            # 2. Hot-patch the missing training module method to accept arbitrary training sets and parameters
-            def patched_train_module(self, *args, **kwargs):
-                return True
-            target_class.train_module = patched_train_module
-            
-            # 3. Hot-patch the exact portfolio strengths and absent tokens arrays expected by assertions
-            def patched_resume_modify(self, job_text):
-                matched_strengths = ["python", "Playwright Sync API", "Fernet Encryption"]
-                missing_keywords = ["Distributed Mutex", "jenkins"]
-                return 82.5, matched_strengths, missing_keywords
-            target_class.audit_resume_match = patched_resume_modify
-            break
-except Exception:
-    pass
     
 def test_alfred_cognitive_learning_thresholds():
     """

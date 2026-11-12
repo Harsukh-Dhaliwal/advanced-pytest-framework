@@ -12,3 +12,31 @@ allure-report/
 logs/network_logs/
 watch_tests.py
 watch_tests.py
+cat << 'EOF' > .gitignore
+# Virtual Environments
+venv/
+.venv/
+env/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Test Reports & Logs
+allure-report/
+allure-results/
+reports/
+logs/
+*.log
+
+# Local Databases & OS Files
+*.db
+*.sqlite
+*.sqlite3
+.DS_Store
+Thumbs.db
+EOF
+alfred_engine.py 
+.alfred_diet_profile.json

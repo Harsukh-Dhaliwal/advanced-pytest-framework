@@ -1,2 +1,0 @@
-[32mINFO    [0m AutomationSuite:test_mobile_emulation.py:13 Targeting deployment platform environment: QA
-[32mINFO    [0m AutomationSuite:test_mobile_emulation.py:22 Navigating to emulated mobile workspace endpoint: https://www.saucedemo.com/

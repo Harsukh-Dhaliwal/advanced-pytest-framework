@@ -1,1 +1,0 @@
-{"uuid": "1a842ad9-e93d-4a08-a568-0cb98427fce9", "children": ["0c424311-f9c8-4a5b-bc2b-4159d4504182"], "befores": [{"name": "streaming_network_service", "status": "passed", "start": 1793749434003, "stop": 1793749434003}], "afters": [{"name": "streaming_network_service::<lambda>", "start": 1793749439400}], "start": 1793749434003, "stop": 1793749439400}
